@@ -24,6 +24,10 @@ jobs:
 
       - name: Verificar Novos Vídeos e Notificar
         env:
+          # Notificações via Telegram
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Notificações via WhatsApp (CallMeBot) - Opcional
           CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
           CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
           JW_LANG: 'T'
