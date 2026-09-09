@@ -1,0 +1,43 @@
+name: JW.ORG New Videos Checker
+
+on:
+  schedule:
+    # Executa a cada 30 minutos (você pode ajustar para '*/15 * * * *' se desejar)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Permite rodar manualmente a qualquer momento pela interface do GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  check-videos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verificar Novos Vídeos e Notificar
+        env:
+          CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+          JW_LANG: 'T'
+        run: |
+          python check_videos.py
+
+      - name: Atualizar Histórico no Repositório
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add history.json
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "chore: atualiza histórico de vídeos [skip ci]"
+            git push
+          else
+            echo "Nenhuma alteração no histórico para salvar."
+          fi
