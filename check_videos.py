@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Monitor de Novos Vídeos do JW.ORG via CallMeBot (WhatsApp)
-Consulta a API da CDN do JW.ORG e envia notificações para novos vídeos.
+Monitor de Novos Vídeos do JW.ORG
+Consulta a API da CDN do JW.ORG e envia notificações para Telegram e/ou CallMeBot (WhatsApp).
 """
 
 import os
@@ -19,11 +19,16 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-# Configurações padrão
+# Configurações gerais
 JW_LANG = os.environ.get("JW_LANG", "T")  # 'T' = Português
 API_URL = f"https://b.jw-cdn.org/apis/mediator/v1/categories/{JW_LANG}/LatestVideos?detailed=1&clientType=web"
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "history.json")
 
+# Configurações do Telegram
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+
+# Configurações do CallMeBot (WhatsApp)
 CALLMEBOT_PHONE = os.environ.get("CALLMEBOT_PHONE", "").strip()
 CALLMEBOT_APIKEY = os.environ.get("CALLMEBOT_APIKEY", "").strip()
 
@@ -93,11 +98,40 @@ def get_video_link(video):
     return mp4_url if mp4_url else web_url
 
 
+def send_telegram_notification(message):
+    """Envia mensagem usando a API oficial do Telegram Bot."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return False
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = json.dumps({
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": False
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            resp_body = resp.read().decode("utf-8", errors="ignore")
+            print(f"Telegram resposta (HTTP {resp.status})")
+            return resp.status == 200
+    except urllib.error.HTTPError as e:
+        print(f"Erro HTTP Telegram: {e.code} - {e.read().decode('utf-8', errors='ignore')}")
+        return False
+    except Exception as e:
+        print(f"Erro ao enviar para Telegram: {e}")
+        return False
+
+
 def send_whatsapp_callmebot(message):
     """Envia mensagem usando a API do CallMeBot (WhatsApp)."""
     if not CALLMEBOT_PHONE or not CALLMEBOT_APIKEY:
-        print("Aviso: CALLMEBOT_PHONE ou CALLMEBOT_APIKEY não configurados. Mensagem não enviada via WhatsApp.")
-        print(f"--- Prévia da mensagem ---\n{message}\n--------------------------")
         return False
 
     encoded_text = urllib.parse.quote(message)
@@ -116,6 +150,27 @@ def send_whatsapp_callmebot(message):
     except Exception as e:
         print(f"Erro ao enviar para CallMeBot: {e}")
         return False
+
+
+def notify_all_channels(message):
+    """Envia notificação para todos os canais configurados."""
+    sent_any = False
+    
+    # Envio via Telegram
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+        if send_telegram_notification(message):
+            print("Notificação enviada com sucesso para o Telegram!")
+            sent_any = True
+            
+    # Envio via WhatsApp (CallMeBot)
+    if CALLMEBOT_PHONE and CALLMEBOT_APIKEY:
+        if send_whatsapp_callmebot(message):
+            print("Notificação enviada com sucesso para o WhatsApp!")
+            sent_any = True
+
+    if not sent_any:
+        print("Nenhum canal configurado (Telegram ou WhatsApp).")
+        print(f"--- Prévia da mensagem ---\n{message}\n--------------------------")
 
 
 def main():
@@ -173,7 +228,7 @@ def main():
 
         msg = "\n".join(msg_lines)
         print(f"Notificando: {title}")
-        send_whatsapp_callmebot(msg)
+        notify_all_channels(msg)
 
         # Adiciona ao conjunto de vistos
         seen_guids.add(video.get("guid"))

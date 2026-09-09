@@ -1,55 +1,54 @@
-# 🎬 Monitor de Novos Vídeos do JW.ORG com Notificação via CallMeBot (WhatsApp)
+# 🎬 Monitor de Novos Vídeos do JW.ORG com Notificação via Telegram / WhatsApp
 
-Este projeto executa um agendamento no **GitHub Actions** que verifica periodicamente (a cada 30 minutos) a publicação de novos vídeos no site **JW.ORG** e envia uma notificação instantânea para o seu **WhatsApp** usando a API gratuita do **CallMeBot**.
+Este projeto executa um agendamento no **GitHub Actions** que verifica periodicamente (a cada 30 minutos) a publicação de novos vídeos no site **JW.ORG** e envia uma notificação instantânea para o seu **Telegram** (e/ou **WhatsApp**).
 
 ---
 
 ## 🚀 Como Funciona
 
 1. O **GitHub Actions** roda a cada 30 minutos (usando `cron`).
-2. O script `check_videos.py` consulta o catálogo oficial de vídeos recentes da CDN do JW.ORG (`b.jw-cdn.org`).
+2. O script `check_videos.py` consulta o catálogo de vídeos recentes da CDN do JW.ORG (`b.jw-cdn.org`).
 3. Compara os vídeos retornados com a lista do arquivo `history.json`.
 4. Se houver vídeos novos:
-   - Envia uma mensagem personalizada para o seu WhatsApp via **CallMeBot**.
+   - Envia uma mensagem personalizada para o seu **Telegram** e/ou **WhatsApp**.
    - Atualiza o arquivo `history.json` e faz commit automático no repositório.
 
 ---
 
-## 📲 Passo 1: Obter a Chave do CallMeBot (Gratuito)
+## 📲 Passo a Passo: Configurar Notificação no Telegram (Recomendado)
 
-Para receber mensagens no WhatsApp pelo CallMeBot:
+### 1. Criar o Bot no Telegram:
+1. No Telegram, procure por **`@BotFather`**.
+2. Inicie a conversa e envie: `/newbot`.
+3. Escolha o nome do bot (ex: `Notificador JW`).
+4. Escolha o username (deve terminar com `bot`, ex: `jw_meu_notificador_bot`).
+5. Copie o **Token de API** recebido (ex: `7123456789:AAFn8x...`).
 
-1. Adicione o número do CallMeBot aos seus contatos do WhatsApp:
-   - **`+34 644 44 24 19`** (ou `+34 644 93 98 78` dependendo da disponibilidade no site [callmebot.com](https://www.callmebot.com/blog/free-api-whatsapp-messages/)).
-2. Envie a seguinte mensagem pelo WhatsApp para esse número:
-   ```text
-   I allow callmebot to send me messages
-   ```
-3. O bot responderá em poucos segundos com a sua **API Key**, por exemplo:
-   ```text
-   API Key created successfully! Your API key is: 123456
-   ```
-4. Guarde o seu **número com DDI e DDD** (ex: `5511999999999`) e a **API Key**.
+### 2. Obter seu Chat ID:
+1. No Telegram, procure por **`@userinfobot`**.
+2. Clique em **Iniciar** (ou envie `/start`).
+3. Ele responderá com o seu **Id** (ex: `123456789`).
+
+### 3. Iniciar o seu Bot:
+1. Abra a conversa com o seu próprio bot recém-criado (ex: `@jw_meu_notificador_bot`).
+2. Clique em **Iniciar** (ou envie `/start`) para autorizá-lo a te enviar mensagens.
 
 ---
 
-## 🔑 Passo 2: Configurar os Secrets no GitHub
+## 🔑 Configurar os Secrets no GitHub
 
 No seu repositório no GitHub:
 
-1. Vá em **Settings** (Configurações do repositório).
-2. No menu lateral esquerdo, clique em **Secrets and variables** > **Actions**.
-3. Clique no botão verde **New repository secret** e adicione:
-   - **Nome:** `CALLMEBOT_PHONE`
-     - **Valor:** Seu número com DDI e DDD, sem espaços ou símbolos (ex: `5511999999999`).
-   - **Nome:** `CALLMEBOT_APIKEY`
-     - **Valor:** O código/número da chave recebida do CallMeBot.
+1. Vá em **Settings** > **Secrets and variables** > **Actions**.
+2. Clique em **New repository secret** e adicione:
+   - **`TELEGRAM_BOT_TOKEN`**: O token que você recebeu do `@BotFather`.
+   - **`TELEGRAM_CHAT_ID`**: O seu ID que você recebeu do `@userinfobot`.
+
+*(Opcional: Se quiser receber no WhatsApp também quando o CallMeBot estiver liberado, basta adicionar `CALLMEBOT_PHONE` e `CALLMEBOT_APIKEY`).*
 
 ---
 
-## ⚙️ Passo 3: Habilitar Permissão de Escrita no GitHub Actions
-
-Para que o GitHub Actions consiga atualizar o arquivo `history.json` automaticamente:
+## ⚙️ Habilitar Permissão de Escrita no GitHub Actions
 
 1. Vá em **Settings** > **Actions** > **General**.
 2. Role até a seção **Workflow permissions**.
@@ -58,22 +57,8 @@ Para que o GitHub Actions consiga atualizar o arquivo `history.json` automaticam
 
 ---
 
-## 🧪 Passo 4: Testar o Funcionamento
+## 🧪 Testar Manualmente
 
-1. No seu repositório, clique na aba **Actions**.
-2. No menu à esquerda, clique no workflow **JW.ORG New Videos Checker**.
-3. Clique no botão **Run workflow** > **Run workflow**.
-4. O GitHub executará a checagem imediatamente.
-
----
-
-## 📁 Estrutura do Projeto
-
-```text
-├── .github/
-│   └── workflows/
-│       └── check_jw_videos.yml  # Agendamento e execução no GitHub Actions
-├── check_videos.py              # Script principal em Python
-├── history.json                 # Registro dos vídeos já notificados
-└── README.md                    # Instruções de configuração
-```
+1. Na aba **Actions** do seu repositório, selecione **JW.ORG New Videos Checker**.
+2. Clique no botão **Run workflow** > **Run workflow**.
+3. Você receberá uma notificação sempre que houver novidades!
