@@ -3,7 +3,7 @@ name: JW.ORG New Videos Checker
 on:
   schedule:
     # Executa a cada 30 minutos (você pode ajustar para '*/15 * * * *' se desejar)
-    - cron: '*/30 * * * *'
+    - cron: '13,43 * * * *'
   workflow_dispatch: # Permite rodar manualmente a qualquer momento pela interface do GitHub
 
 permissions:
